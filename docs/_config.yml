@@ -20,8 +20,8 @@
 
 title: A sailor in the cyberstorm
 description: >- # this means to ignore newlines until "baseurl:"
-    Cyber security and threat intel. Question, come in the discussion section on [Github](https://github.com/christalib/christalib.github.io/discussions).
-baseurl: "" # the subpath of your site, e.g. /blog
+    Cyber security and threat intel. Question, come in the discussion section on [Github](https://github.com/evilcel3ri/evilcel3ri.github.io/discussions).
+baseurl: "/" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: evilcel3ri
 github_username:  evilcel3ri

@@ -1,8 +1,7 @@
 ---
 layout: post
 title:  "The movie app that watches you watching"
-date:   2021-06-02 11:16:11 +0200
-categories: android
+date:   2021-06-02 
 ---
 
 # The movie app that watches you watching
@@ -20,7 +19,7 @@ Here is why.
 First, here are some basics regarding the code retrieved from Pithus:
 
 - some of the code is obfuscated:
-  ![source](hdmovies-quick-static-1.png)
+  ![source](/assets/images/hdmovies-quick-static-1.png)
 - the list of permissions on Pithus extends from read/write external storage, send/read/recieve sms, access fine location, camera, phone permissions, get accounts, read/write contacts... Too much permissions, it's fishy.
 - the network data has some suspicious domains such as `ifronttech[.]in`
 
@@ -67,11 +66,11 @@ So it's time to boot up JADX.
 
 Classes before deobsfuscation:
 
-![before deobsfscfs](before_obsc.png)
+![before deobsfscfs](/assets/images/hdmovies-before_obsc.png)
 
 Classes after deobfuscation:
 
-![after deobsfs](after_obsc.png)
+![after deobsfs](/assets/images/hdmovies-after_obsc.png)
 
 The most interesing part of the code is located in the package: `com.hdmovies.freemovieshd.watchmovies.info` and everything under. The name of those classes are obviously obfuscated but that doesn't prevent us from getting the general logic of the code.
 
@@ -79,13 +78,13 @@ The most interesing part of the code is located in the package: `com.hdmovies.fr
 
 The code implements a custom deobfuscation technique with the method `huhaa46()` from the `qedthong` class, illustrated here:
 
-![obfuc](static-analysis-2.png)
+![obfuc](/assets/images/hdmovies-static-analysis-2.png)
 
 If will remove the "hognq" part of the string if it founds it and then try to decode it from base64. There a number of variablesfrom options values to export files that are simply encoded in base64 and not using that system.
 
 ### The app will scan for all your files
 
-![scan](static-analysis-1.png)
+![scan](/assets/images/hdmovies-static-analysis-1.png)
 
 This function will scan for files in your external storage and then process them with the obfuscated function `qnqwerhong.qsavelivethong()`.
 
@@ -95,13 +94,13 @@ This function will create a file which name is encoded in Base64 (`TGl2ZS50eHQ=`
 
 In `qhieightrehong` class you can see the app setting up the audio module from your phone and launch the mic with `setSpeakerPhoneOne(true)` ([link](<https://developer.android.com/reference/android/media/AudioManager#setSpeakerphoneOn(boolean)>) to Android documentation).
 
-![audi](static-analysis-3.png)
+![audi](/assets/images/hdmovies-static-analysis-3.png)
 
 ### The app will steal your Signal or Whatsapp conversations
 
 This might be the most substiantial findings in the analysis of this application. It will look for archives of your Signal or Whatsapp folders and then grab everything it can from it.
 
-![conv steal](static-analysis-4.png)
+![conv steal](/assets/images/hdmovies-static-analysis-4.png)
 
 ```
 b3JnLnRob3VnaHRjcmltZS5zZWN1cmVzbXMvLmNvbnZlcnNhdGlvbi5Db252ZXJzYXRpb25BY3Rpdml0eQ== => org.thoughtcrime.securesms/.conversation.ConversationActivity
@@ -112,31 +111,31 @@ Y29tLndoYXRzYXBwLy5Db252ZXJzYXRpb24= => com.whatsapp/.Conversation
 
 The app wil log your phonen calls and get the list of your contacts.
 
-![phone cllss](static-analysis-10.png)
+![phone cllss](/assets/images/hdmovies-static-analysis-10.png)
 
 ### The app will check your wifi and geolocalise it
 
 Not only the app will get your wifi information but it will try to geolocalise you using those information. Indeed, some wifi have geographic coordinates.
 
-![wifi geoloc](static-analysis-11.png)
+![wifi geoloc](/assets/images/hdmovies-static-analysis-11.png)
 
 ### The app will get your carrier and all the information about your device
 
 The application will get all the information from your network carrier and your device. Frankly, at this point we aren't surprised anymore.
 
-![carrier](static-analysis-12.png)
+![carrier](/assets/images/hdmovies-static-analysis-12.png)
 
 ### The app will steal your account tokens from your apps
 
 Each time you log in to an app, the account is linked to it with a token. This malware will steal those accounts allowing further hacking to your online accounts.
 
-![apps](static-analysis-13.png)
+![apps](/assets/images/hdmovies-static-analysis-13.png)
 
 ### Noisy logging
 
 The app seems to be quite poorly coded. A lof of the obfuscation techniques are quite easy to deobfuscate and the app has a lot of very noisy, poorly written logging (allowing so much better hunting!).
 
-![noisy loggin](static-analysis-14.png)
+![noisy loggin](/assets/images/hdmovies-static-analysis-14.png)
 
 ## Conclusion
 
