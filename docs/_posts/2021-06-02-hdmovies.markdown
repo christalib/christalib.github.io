@@ -1,10 +1,8 @@
 ---
 layout: post
 title:  "The movie app that watches you watching"
-date:   2021-06-02 
+date:   2021-06-02
 ---
-
-# The movie app that watches you watching
 
 How can a movie app be a spyware at the same time?
 
