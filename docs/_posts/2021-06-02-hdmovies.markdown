@@ -1,0 +1,250 @@
+---
+layout: post
+title:  "The movie app that watches you watching"
+date:   2021-06-02 11:16:11 +0200
+categories: android
+---
+
+# The movie app that watches you watching
+
+How can a movie app be a spyware at the same time?
+
+One day, I was checking the malicious apks that have been uploaded to [Pithus](https://beta.pithis.org). I found an application called [`com.hdmovies.freemovieshd`](https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9) that is tagged as `spyware` by various anti-viruses.
+
+![VT](screen-vt.png)
+
+Here is why.
+
+## Quick static analysis
+
+First, here are some basics regarding the code retrieved from Pithus:
+
+- some of the code is obfuscated:
+  ![source](hdmovies-quick-static-1.png)
+- the list of permissions on Pithus extends from read/write external storage, send/read/recieve sms, access fine location, camera, phone permissions, get accounts, read/write contacts... Too much permissions, it's fishy.
+- the network data has some suspicious domains such as `ifronttech[.]in`
+
+Here we know that this app is _somewhat_ malicious but how deep can we go?
+
+## Quick dynamic analysis
+
+Then, we launched the app in tria.ge (see [results](https://tria.ge/210507-cgt2rcldz2/behavioral1)) to have some idea of the behaviour of our target.
+
+The app seems aware of possible emulation and didn't return us substantial results except this network section sent at the launch of the app:
+
+```
+Remote address:
+166.62.28\.102:80
+
+Request
+GET /JSONAPI/AppXender/HDMovies.json HTTP/1.1
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 11; sdk_gphone_x86_64_arm64 Build/RSR1.201211.001.A1)
+Host: ifronttech\.in
+Connection: Keep-Alive
+Accept-Encoding: gzip
+
+Response
+HTTP/1.1 200 OK
+Date: Fri, 07 May 2021 19:31:27 GMT
+Server: Apache
+Upgrade: h2,h2c
+Connection: Upgrade, Keep-Alive
+Last-Modified: Sun, 17 Jan 2021 13:38:54 GMT
+ETag: "b3c057b-2d1-5b918ba013f9e-gzip"
+Accept-Ranges: bytes
+Vary: Accept-Encoding,User-Agent
+Content-Encoding: gzip
+Content-Length: 415
+Keep-Alive: timeout=5
+Content-Type: application/json
+```
+
+At this time, we don't know if that is a network check or a C2 communication. We'll need to investigate the code itself.
+
+## Longer statis analysis
+
+So it's time to boot up JADX.
+
+Classes before deobsfuscation:
+
+![before deobsfscfs](before_obsc.png)
+
+Classes after deobfuscation:
+
+![after deobsfs](after_obsc.png)
+
+The most interesing part of the code is located in the package: `com.hdmovies.freemovieshd.watchmovies.info` and everything under. The name of those classes are obviously obfuscated but that doesn't prevent us from getting the general logic of the code.
+
+### Obfuscation technique
+
+The code implements a custom deobfuscation technique with the method `huhaa46()` from the `qedthong` class, illustrated here:
+
+![obfuc](static-analysis-2.png)
+
+If will remove the "hognq" part of the string if it founds it and then try to decode it from base64. There a number of variablesfrom options values to export files that are simply encoded in base64 and not using that system.
+
+### The app will scan for all your files
+
+![scan](static-analysis-1.png)
+
+This function will scan for files in your external storage and then process them with the obfuscated function `qnqwerhong.qsavelivethong()`.
+
+This function will create a file which name is encoded in Base64 (`TGl2ZS50eHQ=` which decode to `file.txt`) with the name of all the scanned files.
+
+### The app will record you
+
+In `qhieightrehong` class you can see the app setting up the audio module from your phone and launch the mic with `setSpeakerPhoneOne(true)` ([link](<https://developer.android.com/reference/android/media/AudioManager#setSpeakerphoneOn(boolean)>) to Android documentation).
+
+![audi](static-analysis-3.png)
+
+### The app will steal your Signal or Whatsapp conversations
+
+This might be the most substiantial findings in the analysis of this application. It will look for archives of your Signal or Whatsapp folders and then grab everything it can from it.
+
+![conv steal](static-analysis-4.png)
+
+```
+b3JnLnRob3VnaHRjcmltZS5zZWN1cmVzbXMvLmNvbnZlcnNhdGlvbi5Db252ZXJzYXRpb25BY3Rpdml0eQ== => org.thoughtcrime.securesms/.conversation.ConversationActivity
+Y29tLndoYXRzYXBwLy5Db252ZXJzYXRpb24= => com.whatsapp/.Conversation
+```
+
+### The app will log your phone calls
+
+The app wil log your phonen calls and get the list of your contacts.
+
+![phone cllss](static-analysis-10.png)
+
+### The app will check your wifi and geolocalise it
+
+Not only the app will get your wifi information but it will try to geolocalise you using those information. Indeed, some wifi have geographic coordinates.
+
+![wifi geoloc](static-analysis-11.png)
+
+### The app will get your carrier and all the information about your device
+
+The application will get all the information from your network carrier and your device. Frankly, at this point we aren't surprised anymore.
+
+![carrier](static-analysis-12.png)
+
+### The app will steal your account tokens from your apps
+
+Each time you log in to an app, the account is linked to it with a token. This malware will steal those accounts allowing further hacking to your online accounts.
+
+![apps](static-analysis-13.png)
+
+### Noisy logging
+
+The app seems to be quite poorly coded. A lof of the obfuscation techniques are quite easy to deobfuscate and the app has a lot of very noisy, poorly written logging (allowing so much better hunting!).
+
+![noisy loggin](static-analysis-14.png)
+
+## Conclusion
+
+This application allows us to finally accomplish our dream to tbe hero of the films we watch... by watching us!
+
+The persistance process is made through the calendar relaunching the application in case it isn't running. The application will set up cancelled events here and there and when they ring, they will relaunch the application.
+
+The application stores the entire stolen data in .txt files and in a sqlite database with md5 on the phone itself and then, probably send it over encrypted TCP communication (UNSURE).
+
+## Network indicators
+
+- fronttech\\.in
+- instadownload\\.buzz
+- 135.181.154\\.21
+
+## Hunting rules:
+
+```yara
+rule crime_unknown_eight {
+    meta:
+        date = "2021-05-10"
+        author = "@evilcel3ri"
+        description = "Detects a specific spyware with keylogging capabilities"
+
+    strings:
+        $a = "ifronttech.in"
+        $b = "b3JnLnRob3VnaHRjcmltZS5zZWN1cmVzbXMvLmNvbnZlcnNhdGlvbi5Db252ZXJzYXRpb25BY3Rpdml0eQ=="
+        $c = "Y29tLndoYXRzYXBwLy5Db252ZXJzYXRpb24="
+        $d = "hognq" ascii
+        $e = "HD_Movie1_8_321tn" ascii
+        $f = "ppbew.txt" ascii
+        $g = "dGhpcyBpcyBhZ2RmaGdkZmgga2V5"
+        $h = "Removeing files" ascii
+        $k = "bew.txt" ascii
+
+    condition:
+        uint16(0) == 0x6564 and any of them
+}
+```
+
+## Details
+
+See details page on Pithus: [https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9](https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9)
+
+> Pithus is an open-source static analysis tool for malicious Android application. Check it out at: https://beta.pithus.org
+
+---
+
+filter: !arp && !igmp && !gquic
+
+- one url has various relations to malicious apks: https://www.virustotal.com/gui/domain/youtubei.googleapis.com/relations
+- after a network check (DNS to 8.8.8.8), dns to youtubei and then tcp connection (ip: 216.58.214[.]10)
+- connection to 172.217.168[.]234 has "DOWNGRD" (IP belongs to google) #fp
+- possible sending domain or C2: https://www.virustotal.com/gui/domain/instadownload.buzz/relations
+
+* 135.181.154.21 (this IP for our PCAP)
+* 95.217.221.24
+
+??? https://censys.io/certificates?q=startappservice.com (why so many) https://censys.io/certificates/64c8e223ff84152a5dfb31310fc226fe6a176059c159d7b978b9a8491db8fbd0
+
+- CN=Go Daddy Secure Certificate Authority - G2,OU=http://certs.godaddy.com/repository/,O=GoDaddy.com\, Inc.,L=Scottsdale,ST=Arizona,C=US
+- 2020-06-12T17:42:58+00:00
+- 2021-08-11T13:31:38+00:00
+
+* connection with ifronttech[.]in with a JSON payload:
+
+```
+GET /JSONAPI/AppXender/HDMovies.json HTTP/1.1
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 11; sdk_gphone_x86_64_arm64 Build/RSR1.201211.001.A1)
+Host: ifronttech.in
+Connection: Keep-Alive
+Accept-Encoding: gzip
+
+HTTP/1.1 200 OK
+Date: Fri, 07 May 2021 19:31:27 GMT
+Server: Apache
+Upgrade: h2,h2c
+Connection: Upgrade, Keep-Alive
+Last-Modified: Sun, 17 Jan 2021 13:38:54 GMT
+ETag: "b3c057b-2d1-5b918ba013f9e-gzip"
+Accept-Ranges: bytes
+Vary: Accept-Encoding,User-Agent
+Content-Encoding: gzip
+Content-Length: 415
+Keep-Alive: timeout=5
+Content-Type: application/json
+
+...........RMO.0.=/.........	!.....!...*7..S.........c.Q...,..{..7.....Z0V..X..q<...0..12..s..I.%..K.RB.c.X..."........8.	..k1.?...[..wyU.6F%..d-.$:d...:3..@...J.+...C..
+....[...?7Rj...&.$y.7J(....U..v..a....J..(l.2g. . .......p..o........@.......S....#Y..n,..........j..'..B.7+w....z.....8^.A\|?..&OO/..~.?G.Y%.i..J..+.?..x2.[...K8	TBF}....ulv.......v.+.9.....wb..e.W......A....v)..&.AVE....'.W..a..8.......8......
+```
+
+curled:
+
+```json
+ curl http://ifronttech.in/JSONAPI/AppXender/HDMovies.json
+{
+    "version" : "1.0",
+    "appurl" : "https://play.google.com/store/apps/details?id=",
+  "appapi" : "https://freemoviewatchmore.online/big/",
+    "apistr1" : "movieplay.php",
+    "apiimg" : "",
+    "demppkg1" : "com.fullpopular.movcucuniniokfull",
+    "ShowFacebookBannerAds": true,
+ "ShowFacebookFullscreenAds": true,
+  "ShowFacebookNativeAds": true,
+     "appads" : true,
+"ProAdsImg":"https://play-lh.googleusercontent.com/B4I_0n75xhKnvG_tSJ6AE7bew2Xd2b8ooKO90H4YYjwoHVlq-9FhiF7vKwgp_InosQ=s144",
+    "ProAdsTitle":"Free Latest HD Movies",
+	"ProAdsDesc":"Watch Full HD Movies Latest Movies Free Unlimited",
+	"ProAdsUrl":"https://play.google.com/store/apps/details?id=com.hdmoviesfree.freehdmovies.watchfullmovies"
+```
