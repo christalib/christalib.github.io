@@ -10,7 +10,7 @@ How can a movie app be a spyware at the same time?
 
 One day, I was checking the malicious apks that have been uploaded to [Pithus](https://beta.pithis.org). I found an application called [`com.hdmovies.freemovieshd`](https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9) that is tagged as `spyware` by various anti-viruses.
 
-![VT](screen-vt.png)
+![VT](/assets/images/hdmovies-screen-vt.png)
 
 Here is why.
 
