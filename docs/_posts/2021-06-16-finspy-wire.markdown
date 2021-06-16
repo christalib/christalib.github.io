@@ -154,7 +154,7 @@ The local socket address generation is similar to the previous samples:
 
 ## Suspicious ELFs found in the app
 
-Most of our work was following the steps of Defensive Lab Agency and Amnesty. Further down in the analysis, there was some suspicious strings that look like binary data. After contacting Defensive Lab Agency, they mentionned having found them as well.
+Most of our work was following the steps of Defensive Lab Agency and Amnesty. Further down in the analysis, there was some suspicious strings that looked like binary data. After contacting Defensive Lab Agency, they mentionned having found them as well.
 
 There are a couple of java files that are larger than 2 megabytes:
 
