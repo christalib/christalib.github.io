@@ -174,74 +174,13 @@ rule crime_unknown_eight {
 }
 ```
 
+```suricata
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"PUA/Spyware HDMovies suspicious host fronttech in";http.host;content:"ifronttech.in";http.uri;content:"/JSONAPI/AppXender/HDMovies.json";flow:to_server,established;)
+```
+
+
 ## Details
 
 See details page on Pithus: [https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9](https://beta.pithus.org/report/f18aba837e86025dfb9bd3fd2c4bf161f679ff1f3d10e7a480d682178051a9b9)
 
 > Pithus is an open-source static analysis tool for malicious Android application. Check it out at: https://beta.pithus.org
-
----
-
-filter: !arp && !igmp && !gquic
-
-- one url has various relations to malicious apks: https://www.virustotal.com/gui/domain/youtubei.googleapis.com/relations
-- after a network check (DNS to 8.8.8.8), dns to youtubei and then tcp connection (ip: 216.58.214[.]10)
-- connection to 172.217.168[.]234 has "DOWNGRD" (IP belongs to google) #fp
-- possible sending domain or C2: https://www.virustotal.com/gui/domain/instadownload.buzz/relations
-
-* 135.181.154.21 (this IP for our PCAP)
-* 95.217.221.24
-
-??? https://censys.io/certificates?q=startappservice.com (why so many) https://censys.io/certificates/64c8e223ff84152a5dfb31310fc226fe6a176059c159d7b978b9a8491db8fbd0
-
-- CN=Go Daddy Secure Certificate Authority - G2,OU=http://certs.godaddy.com/repository/,O=GoDaddy.com\, Inc.,L=Scottsdale,ST=Arizona,C=US
-- 2020-06-12T17:42:58+00:00
-- 2021-08-11T13:31:38+00:00
-
-* connection with ifronttech[.]in with a JSON payload:
-
-```
-GET /JSONAPI/AppXender/HDMovies.json HTTP/1.1
-User-Agent: Dalvik/2.1.0 (Linux; U; Android 11; sdk_gphone_x86_64_arm64 Build/RSR1.201211.001.A1)
-Host: ifronttech.in
-Connection: Keep-Alive
-Accept-Encoding: gzip
-
-HTTP/1.1 200 OK
-Date: Fri, 07 May 2021 19:31:27 GMT
-Server: Apache
-Upgrade: h2,h2c
-Connection: Upgrade, Keep-Alive
-Last-Modified: Sun, 17 Jan 2021 13:38:54 GMT
-ETag: "b3c057b-2d1-5b918ba013f9e-gzip"
-Accept-Ranges: bytes
-Vary: Accept-Encoding,User-Agent
-Content-Encoding: gzip
-Content-Length: 415
-Keep-Alive: timeout=5
-Content-Type: application/json
-
-...........RMO.0.=/.........	!.....!...*7..S.........c.Q...,..{..7.....Z0V..X..q<...0..12..s..I.%..K.RB.c.X..."........8.	..k1.?...[..wyU.6F%..d-.$:d...:3..@...J.+...C..
-....[...?7Rj...&.$y.7J(....U..v..a....J..(l.2g. . .......p..o........@.......S....#Y..n,..........j..'..B.7+w....z.....8^.A\|?..&OO/..~.?G.Y%.i..J..+.?..x2.[...K8	TBF}....ulv.......v.+.9.....wb..e.W......A....v)..&.AVE....'.W..a..8.......8......
-```
-
-curled:
-
-```json
- curl http://ifronttech.in/JSONAPI/AppXender/HDMovies.json
-{
-    "version" : "1.0",
-    "appurl" : "https://play.google.com/store/apps/details?id=",
-  "appapi" : "https://freemoviewatchmore.online/big/",
-    "apistr1" : "movieplay.php",
-    "apiimg" : "",
-    "demppkg1" : "com.fullpopular.movcucuniniokfull",
-    "ShowFacebookBannerAds": true,
- "ShowFacebookFullscreenAds": true,
-  "ShowFacebookNativeAds": true,
-     "appads" : true,
-"ProAdsImg":"https://play-lh.googleusercontent.com/B4I_0n75xhKnvG_tSJ6AE7bew2Xd2b8ooKO90H4YYjwoHVlq-9FhiF7vKwgp_InosQ=s144",
-    "ProAdsTitle":"Free Latest HD Movies",
-	"ProAdsDesc":"Watch Full HD Movies Latest Movies Free Unlimited",
-	"ProAdsUrl":"https://play.google.com/store/apps/details?id=com.hdmoviesfree.freehdmovies.watchfullmovies"
-```
